@@ -1,4 +1,4 @@
-function graySmall(src, dst, scale) {
+function grayResize(src, dst, scale) {
     const gray = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.resize(gray, dst, new cv.Size(0, 0), scale, scale);
@@ -7,7 +7,7 @@ function graySmall(src, dst, scale) {
 }
 
 async function exe(obj) {
-    const tmplMag = 0.1;
+    const tmplHMag = 0.1;
     const mScale = 0.5;
 
     const canvaselm = document.querySelector("#canvas");
@@ -52,16 +52,16 @@ async function exe(obj) {
             if (!tmpl.empty()) {
                 // グレスケ・リサイズしてテンプレートマッチング
                 const result = new cv.Mat();
-                graySmall(src, tgt, mScale);
+                grayResize(src, tgt, mScale);
                 cv.matchTemplate(tgt, tmpl, result, cv.TM_CCOEFF_NORMED);
                 const mm = cv.minMaxLoc(result);
                 const mY = Math.round(mm.maxLoc.y / mScale);
 
                 // マッチング位置でトリミング
                 const tmplOrigH = Math.round(tmpl.rows / mScale);
-                const cropHeight = src.rows - mY - tmplOrigH;
-                if (cropHeight > 0) {
-                    const srcRect = new cv.Rect(0, mY + tmplOrigH, src.cols, cropHeight);
+                const cropH = src.rows - mY - tmplOrigH;
+                if (cropH > 0) {
+                    const srcRect = new cv.Rect(0, mY + tmplOrigH, src.cols, cropH);
                     dst = src.roi(srcRect).clone();
                 } else {
                     dst = src.clone();
@@ -75,10 +75,10 @@ async function exe(obj) {
             dst.delete();
 
             // テンプレート更新
-            const tmplHeight = Math.round(src.rows * tmplMag);
-            const tmplRect = new cv.Rect(0, src.rows - tmplHeight, src.cols, tmplHeight);
+            const tmplH = Math.round(src.rows * tmplHMag);
+            const tmplRect = new cv.Rect(0, src.rows - tmplH, src.cols, tmplH);
             const srcRoi = src.roi(tmplRect);
-            graySmall(srcRoi, tmpl, mScale);
+            grayResize(srcRoi, tmpl, mScale);
             srcRoi.delete()
 
             src.delete(); 

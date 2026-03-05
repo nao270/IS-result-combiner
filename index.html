@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>統合戦略リザルト画像結合ツール</title>
+    <style>
+        body{margin: 0 2rem;}
+        h1{font-size: 120%;}
+        details, div, li{margin: 1rem 0;}
+        details div{padding-left: .75rem; margin-left: .25rem; border-left: 4px solid #BBBBBB;}
+        img{display: block; margin: .5rem auto;}
+        ol{padding-left: 1rem;}
+        canvas{max-width: 60%;}
+    </style>
+</head>
+
+<body>
+    <h1>統合戦略リザルト画像結合ツール</h1>
+    <details>
+        <summary>使い方</summary>
+        <div>
+            <ol>
+                <li>
+                    リザルトが全て写るように複数枚スクリーンショット撮影します。ファイル名を揃えるために上から順に撮影することを推奨します。<br>
+                    最初に初期位置で撮影します。2枚目以降は上部を除外した緑色の部分が有効な範囲で、上下に少し余裕を持って撮影します。最後に最下部に合わせて撮影します。
+                    <img src="img/example.png" style="width: 90%">
+                </li>
+                <li>
+                    必要に応じてファイル名を変更します。昇順で並べたときにリザルトの上から順になるようにします。<br>
+                    リネーム不要例：IMG_XXXX.PNG, Screenshot_YYYYMMDD-HHMMSS.png<br>
+                    リネーム例　　：1.png, 2.png, 3.png, …
+                </li>
+                <li>
+                    [ファイル選択]を押して画像を全て選択します。処理が完了すると結合された画像が表示されます。
+                    <img src="img/result.png" style="width: 30%">
+                </li>
+            </ol>
+            処理はブラウザ上で行われ、処理前後の画像がアップロードされることはありません。<br>
+            入力する画像は全て同じ解像度でなければなりません。<br>
+            エラーが発生した場合や質問・要望があれば<a target="_blank" href="https://x.com/Nao_arknights">作者</a>まで。
+        </div>
+    </details>
+
+    <div><input type="file" accept="image/*" multiple onchange="exe(this)"></div>
+    <div id="status"></div>
+    <canvas id="canvas"></canvas>
+    
+    <script async src="js/opencv.js"></script>
+    <script src="js/my_script.js"></script>
+</body>

@@ -1,4 +1,15 @@
+function graySmall(src, dst, scale) {
+    const gray = new cv.Mat();
+    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+    cv.resize(gray, dst, new cv.Size(0, 0), scale, scale);
+    gray.delete();
+    return dst;
+}
+
 async function exe(obj) {
+    const tmplMag = 0.1;
+    const mScale = 0.5;
+
     const canvaselm = document.querySelector("#canvas");
     const statelm = document.querySelector("#status");
     
@@ -22,8 +33,9 @@ async function exe(obj) {
 
         // 初期化
         cv = (cv instanceof Promise) ? await cv : cv;
-        let mv = new cv.MatVector();
-        let tmpl = false;
+        const mv = new cv.MatVector();
+        const tgt = new cv.Mat();
+        const tmpl = new cv.Mat();
 
         for (const file of files) {
             // 画像読み込み
@@ -37,23 +49,25 @@ async function exe(obj) {
 
             // mvに画像を追加
             let dst;
-            if (tmpl !== false) {
-                // テンプレートマッチング
+            if (!tmpl.empty()) {
+                // グレスケ・リサイズしてテンプレートマッチング
                 const result = new cv.Mat();
-                cv.matchTemplate(src, tmpl, result, cv.TM_CCOEFF_NORMED);
-                const mY = cv.minMaxLoc(result).maxLoc.y;
+                graySmall(src, tgt, mScale);
+                cv.matchTemplate(tgt, tmpl, result, cv.TM_CCOEFF_NORMED);
+                const mm = cv.minMaxLoc(result);
+                const mY = Math.round(mm.maxLoc.y / mScale);
 
                 // マッチング位置でトリミング
-                const cropHeight = src.rows - mY - tmpl.rows;
+                const tmplOrigH = Math.round(tmpl.rows / mScale);
+                const cropHeight = src.rows - mY - tmplOrigH;
                 if (cropHeight > 0) {
-                    const srcRect = new cv.Rect(0, mY + tmpl.rows, src.cols, cropHeight);
+                    const srcRect = new cv.Rect(0, mY + tmplOrigH, src.cols, cropHeight);
                     dst = src.roi(srcRect).clone();
                 } else {
                     dst = src.clone();
                 }
 
                 result.delete();
-                tmpl.delete();
             } else {
                 dst = src.clone();
             }
@@ -61,12 +75,16 @@ async function exe(obj) {
             dst.delete();
 
             // テンプレート更新
-            const tmplHeight = Math.round(src.rows * 0.1);
+            const tmplHeight = Math.round(src.rows * tmplMag);
             const tmplRect = new cv.Rect(0, src.rows - tmplHeight, src.cols, tmplHeight);
-            tmpl = src.roi(tmplRect).clone();
+            const srcRoi = src.roi(tmplRect);
+            graySmall(srcRoi, tmpl, mScale);
+            srcRoi.delete()
+
             src.delete(); 
         }
-        if (tmpl) {tmpl.delete();}
+        tgt.delete();
+        tmpl.delete();
 
         // 結合
         const dst = new cv.Mat();

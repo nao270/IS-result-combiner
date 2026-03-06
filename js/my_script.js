@@ -3,7 +3,6 @@ function grayResize(src, dst, scale) {
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.resize(gray, dst, new cv.Size(0, 0), scale, scale);
     gray.delete();
-    return dst;
 }
 
 async function exe(obj) {
@@ -36,6 +35,7 @@ async function exe(obj) {
         const mv = new cv.MatVector();
         const tgt = new cv.Mat();
         const tmpl = new cv.Mat();
+        let tmplH;
 
         for (const file of files) {
             // 画像読み込み
@@ -58,10 +58,9 @@ async function exe(obj) {
                 const mY = Math.round(mm.maxLoc.y / mScale);
 
                 // マッチング位置でトリミング
-                const tmplOrigH = Math.round(tmpl.rows / mScale);
-                const cropH = src.rows - mY - tmplOrigH;
+                const cropH = src.rows - mY - tmplH;
                 if (cropH > 0) {
-                    const srcRect = new cv.Rect(0, mY + tmplOrigH, src.cols, cropH);
+                    const srcRect = new cv.Rect(0, mY + tmplH, src.cols, cropH);
                     dst = src.roi(srcRect).clone();
                 } else {
                     dst = src.clone();
@@ -75,7 +74,7 @@ async function exe(obj) {
             dst.delete();
 
             // テンプレート更新
-            const tmplH = Math.round(src.rows * tmplHMag);
+            tmplH = Math.round(src.rows * tmplHMag);
             const tmplRect = new cv.Rect(0, src.rows - tmplH, src.cols, tmplH);
             const srcRoi = src.roi(tmplRect);
             grayResize(srcRoi, tmpl, mScale);

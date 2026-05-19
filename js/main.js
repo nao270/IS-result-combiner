@@ -134,7 +134,7 @@ async function main(obj) {
       dst.delete();
     } catch (err) {
       statusElm.textContent = 'エラー: ' + err;
-      console.log("error: ", err);
+      console.log('error: ', err);
     }
   }
 }

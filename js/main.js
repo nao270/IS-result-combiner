@@ -63,9 +63,9 @@ async function combineImgs(files) {
       part = src.clone();
     } else {
       const matchY = detectMatchY(src, tpl);
-      const cropH = src.rows - matchY - tpl.rows;
-      if (cropH > 0) {
-        const partRect = new cv.Rect(0, matchY + tpl.rows, src.cols, cropH);
+      const partH = src.rows - matchY - tpl.rows;
+      if (partH > 0) {
+        const partRect = new cv.Rect(0, src.rows - partH, src.cols, partH);
         const roi = src.roi(partRect);
         part = roi.clone();
         roi.delete();

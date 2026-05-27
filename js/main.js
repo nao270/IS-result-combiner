@@ -1,5 +1,4 @@
 const TPL_H_RATE = 0.1;
-const MT_SCALE = 0.5;
 const canvasElm = document.querySelector('#canvas');
 const statusElm = document.querySelector('#status');
 
@@ -16,24 +15,21 @@ async function readImg(file) {
 }
 
 
-function grayResize(img) {
+function gray(img) {
   const dst = new cv.Mat();
-  const gray = new cv.Mat();
-  cv.cvtColor(img, gray, cv.COLOR_RGBA2GRAY);
-  cv.resize(gray, dst, new cv.Size(0, 0), MT_SCALE, MT_SCALE);
-  gray.delete();
+  cv.cvtColor(img, dst, cv.COLOR_RGBA2GRAY);
   return dst;
 }
 
 
 function detectMatchY(img, tpl) {
-  const mtImg = grayResize(img);
-  const mtTpl = grayResize(tpl);
+  const mtImg = gray(img);
+  const mtTpl = gray(tpl);
   const result = new cv.Mat();
 
   cv.matchTemplate(mtImg, mtTpl, result, cv.TM_CCOEFF_NORMED);
   const mml = cv.minMaxLoc(result);
-  const matchY = Math.round(mml.maxLoc.y / MT_SCALE);
+  const matchY = mml.maxLoc.y;
 
   mtImg.delete();
   mtTpl.delete();
@@ -93,9 +89,9 @@ async function combineImgs(files) {
 function makeFileName(files) {
   const fileName = files[0].name;
   const dotPos = fileName.lastIndexOf('.');
-  const extension = fileName.slice(dotPos + 1);
+  const extension = fileName.slice(dotPos);
   const stem = fileName.slice(0, dotPos);
-  return stem + '_combined.' + extension;
+  return stem + '_combined' + extension;
 }
 
 

@@ -21,13 +21,13 @@
     <div>
       <ol>
         <li>
-          リザルトが全て写るように複数枚スクリーンショット撮影します。ファイル名を揃えるために上から順に撮影することを推奨します。<br>
-          最初に初期位置で撮影します。2枚目以降は上部を除外した緑色の部分が有効な範囲で、上下に少し余裕を持って撮影します。最後に最下部に合わせて撮影します。
+          リザルトが全て写るようにスクリーンショット撮影します。ファイル名を揃えるために上から順に撮影することを推奨します。<br>
+          最初に初期位置で撮影します。2枚目以降は上部を除外した緑色の部分が有効な範囲で、上下に少し余裕を持って撮影します。最後に最下部で撮影します。
           <img src="img/example.webp" style="width: 90%">
         </li>
         <li>
           必要に応じてファイル名を変更します。昇順で並べたときにリザルトの上から順になるようにします。<br>
-          リネーム不要例：IMG_XXXX.PNG, Screenshot_YYYYMMDD-HHMMSS.png<br>
+          リネーム不要例：IMG_XXXX.PNG, Screenshot_yyyyMMdd-hhmmss.png<br>
           リネーム例　　：1.png, 2.png, 3.png, …
         </li>
         <li>
@@ -36,14 +36,14 @@
         </li>
       </ol>
       処理はブラウザ上で行われ、処理前後の画像がアップロードされることはありません。<br>
-      入力する画像は全て同じ大きさでなければなりません。<br>
+      入力する画像の横幅が異なる場合は、先頭画像の横幅を基準にリサイズします。<br>
       エラー報告や質問・要望は<a target="_blank" href="https://x.com/Nao_arknights">作者</a>まで。
     </div>
   </details>
 
   <div><input type="file" accept="image/*" multiple onchange="main(this)"></div>
   <div id="status"></div>
-  <canvas id="canvas"></canvas>
+  <div id="dst"></div>
   
   <script async src="js/opencv.js"></script>
   <script src="js/main.js"></script>

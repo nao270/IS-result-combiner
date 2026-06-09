@@ -1,9 +1,14 @@
-const TPL_H_RATE = 0.1;
-const canvasElm = document.querySelector('#canvas');
+const TPL_ROWS = 0.1;
+const PAD_T = 0.2;
+const PAD_L = 0.2;
+const PAD_R = 0.1;
+
+const canvasElm = document.createElement('canvas');
 const statusElm = document.querySelector('#status');
+const dstElm = document.querySelector('#dst')
 
 
-async function readImg(file) {
+async function loadImg(file) {
   const imgElm = new Image();
   const url = URL.createObjectURL(file);
   imgElm.src = url;
@@ -15,70 +20,81 @@ async function readImg(file) {
 }
 
 
-function gray(img) {
-  const dst = new cv.Mat();
-  cv.cvtColor(img, dst, cv.COLOR_RGBA2GRAY);
-  return dst;
+function normalize(img, baseCols) {
+  const src = img.clone();
+  const scale = baseCols / src.cols;
+  cv.resize(src, img, new cv.Size(0, 0), scale, scale, cv.INTER_LINEAR);
+  src.delete();
 }
 
 
-function detectMatchY(img, tpl) {
-  const mtImg = gray(img);
-  const mtTpl = gray(tpl);
-  const result = new cv.Mat();
+function preprocess(img, dst, rect) {
+  const roi = img.roi(rect);
+  cv.cvtColor(roi, dst, cv.COLOR_RGBA2GRAY);
+  roi.delete();
+}
 
-  cv.matchTemplate(mtImg, mtTpl, result, cv.TM_CCOEFF_NORMED);
+
+function updateTpl(img, tpl, padL, scanCols) {
+  const tplRows = Math.round(img.rows * TPL_ROWS);
+  const rect = new cv.Rect(padL, img.rows - tplRows, scanCols, tplRows);
+  preprocess(img, tpl, rect);
+}
+
+
+function updateTgt(img, tgt, padT, padL, scanCols) {
+  const rect = new cv.Rect(padL, padT, scanCols, img.rows - padT);
+  preprocess(img, tgt, rect);
+}
+
+
+function detectPartRows(tgt, tpl, padT) {
+  const result = new cv.Mat();
+  cv.matchTemplate(tgt, tpl, result, cv.TM_CCOEFF_NORMED);
   const mml = cv.minMaxLoc(result);
   const matchY = mml.maxLoc.y;
-
-  mtImg.delete();
-  mtTpl.delete();
   result.delete();
-  return matchY;
+  return tgt.rows - matchY - tpl.rows;
 }
 
 
-function createTpl(img) {
-  const tplH = Math.round(img.rows * TPL_H_RATE);
-  const tplRect = new cv.Rect(0, img.rows - tplH, img.cols, tplH);
-  const roi = img.roi(tplRect);
-  const tpl = roi.clone();
-  roi.delete();
-  return tpl;
-}
+function combineImgs(imgs) {
+  const baseCols = imgs[0].cols;
+  const padL = Math.round(baseCols * PAD_L);
+  const scanCols = Math.round(baseCols * (1 - PAD_L - PAD_R));
+  const lastIndex = imgs.length - 1;
 
-
-async function combineImgs(files) {
-  const lastFile = files.at(-1);
   const mv = new cv.MatVector();
-  let part, tpl;
+  const tgt = new cv.Mat();
+  const tpl = new cv.Mat();
 
-  for (const file of files) {
-    const src = await readImg(file);
-    if (tpl === undefined) {
-      part = src.clone();
+  for (const [i, img] of imgs.entries()) {
+    if (i === 0) {
+      mv.push_back(img);
     } else {
-      const matchY = detectMatchY(src, tpl);
-      const partH = src.rows - matchY - tpl.rows;
-      if (partH > 0) {
-        const partRect = new cv.Rect(0, src.rows - partH, src.cols, partH);
-        const roi = src.roi(partRect);
-        part = roi.clone();
-        roi.delete();
-      } else {
-        part = src.clone();
+      if (img.cols !== baseCols) {
+        normalize(img, baseCols);
       }
-      tpl.delete();
+      const padT = Math.round(img.rows * PAD_T);
+      updateTgt(img, tgt, padT, padL, scanCols);
+      const partRows = detectPartRows(tgt, tpl, padT);
+
+      if (partRows > 0) {
+        const rect = new cv.Rect(0, img.rows - partRows, img.cols, partRows);
+        const part = img.roi(rect);
+        mv.push_back(part);
+        part.delete();
+      }
     }
 
-    mv.push_back(part);
-    if (file !== lastFile) {
-      tpl = createTpl(src);
+    if (i !== lastIndex) {
+      updateTpl(img, tpl, padL, scanCols);
     }
-    part.delete();
-    src.delete();
+    img.delete();
   }
 
+  tgt.delete();
+  tpl.delete();
   const dst = new cv.Mat();
   cv.vconcat(mv, dst);
   mv.delete();
@@ -86,8 +102,8 @@ async function combineImgs(files) {
 }
 
 
-function makeFileName(files) {
-  const fileName = files[0].name;
+function makeFileName(file) {
+  const fileName = file.name;
   const dotPos = fileName.lastIndexOf('.');
   const extension = fileName.slice(dotPos);
   const stem = fileName.slice(0, dotPos);
@@ -116,21 +132,23 @@ async function main(obj) {
   const files = Array.from(obj.files);
 
   if (files.length) {
-    statusElm.innerHTML = '';
+    statusElm.replaceChildren();
     statusElm.textContent = '処理中…';
 
     try {
       files.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
-      const dst = await combineImgs(files);
+      const imgs = await Promise.all(files.map(async file => await loadImg(file)));
+      const dst = combineImgs(imgs);
 
       cv.imshow(canvasElm, dst);
-      const fileName = makeFileName(files);
+      dstElm.appendChild(canvasElm);
+      const fileName = makeFileName(files[0]);
       createSaveButton(fileName);
-
       dst.delete();
     } catch (err) {
-      statusElm.textContent = 'エラー: ' + err;
-      console.log('error: ', err);
+      canvasElm.remove();
+      statusElm.textContent = `エラーが発生しました。`;
+      console.error(err);
     }
   }
 }

@@ -48,7 +48,7 @@ function updateTgt(img, tgt, padT, padL, scanCols) {
 }
 
 
-function detectPartRows(tgt, tpl, padT) {
+function detectPartRows(tgt, tpl) {
   const result = new cv.Mat();
   cv.matchTemplate(tgt, tpl, result, cv.TM_CCOEFF_NORMED);
   const mml = cv.minMaxLoc(result);
@@ -77,7 +77,7 @@ function combineImgs(imgs) {
       }
       const padT = Math.round(img.rows * PAD_T);
       updateTgt(img, tgt, padT, padL, scanCols);
-      const partRows = detectPartRows(tgt, tpl, padT);
+      const partRows = detectPartRows(tgt, tpl);
 
       if (partRows > 0) {
         const rect = new cv.Rect(0, img.rows - partRows, img.cols, partRows);

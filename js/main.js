@@ -1,9 +1,9 @@
 import { Part } from './part.js';
 
 const TPL_HEIGHT = 0.1;
-const SCAN_X = 0.2;
-const SCAN_Y = 0.23;
-const SCAN_WIDTH = 0.2;
+const SCAN_Y = 0.2;
+const SCAN_X = 0.228;
+const SCAN_WIDTH = 0.1;
 
 const canvas = document.createElement('canvas');
 const imgInput = document.querySelector('#img-input');
@@ -16,7 +16,7 @@ function scanParts(parts) {
   let prevPart;
 
   for (const part of parts) {
-    part.initParams(SCAN_X, TPL_HEIGHT);
+    part.initParams(SCAN_Y, TPL_HEIGHT);
     part.initCtx();
     part.detectHeight(prevPart);
     prevPart = part;
@@ -62,7 +62,7 @@ function saveDst() {
 }
 
 
-async function onChangeImgFiles(obj) {
+async function onChangeImgInput(obj) {
   const files = Array.from(obj.files);
 
   if (files.length) {
@@ -74,7 +74,7 @@ async function onChangeImgFiles(obj) {
       const parts = await Promise.all(files.map(async file => await new Part(file)));
 
       const baseW = parts[0].src.naturalWidth;
-      Part.initStaticParams(baseW, SCAN_Y, SCAN_WIDTH);
+      Part.initStaticParams(baseW, SCAN_X, SCAN_WIDTH);
 
       scanParts(parts);
       drawDst(parts);
@@ -93,5 +93,5 @@ async function onChangeImgFiles(obj) {
 }
 
 
-imgInput.addEventListener('change', (e) => onChangeImgFiles(e.target));
+imgInput.addEventListener('change', (e) => onChangeImgInput(e.target));
 saveButton.addEventListener('click', saveDst);

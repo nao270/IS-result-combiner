@@ -1,48 +1,50 @@
 import { drawDst } from './combiner.js';
+import { getTrimConf } from './conf.js';
 import { loadImg, updateDstName, saveDst } from './io_img.js';
-
-
-const CONF = {
-  BG_TH: 70,
-  TPL_HEIGHT: 0.1,
-  SCAN_X: 0.228,
-  SCAN_Y: 0.2,
-  SCAN_WIDTH: 0.2
-}
+import { trimSrcs } from './trimmer.js';
 
 
 const dstCanvas = document.createElement('canvas');
 const dstWrapper = document.querySelector('#dst-wrapper');
 const imgInput = document.querySelector('#img-input');
 const saveButton = document.querySelector('#save-button');
+const status = document.querySelector('#status');
 
 
-async function onChangeImgInput() {
+async function main() {
   const files = Array.from(imgInput.files);
+  status.textContent = '';
 
   if (files.length) {
     try {
+      dstCanvas.remove();
       saveButton.disabled = true;
-      saveButton.textContent = '処理中…';
+      status.classList.add('in-progress');
 
-      files.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
-      const srcs = await Promise.all(files.map(async file => await loadImg(file)));
+      files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+      let srcs = await Promise.all(files.map(async file => await loadImg(file)));
 
-      drawDst(srcs, dstCanvas, CONF);
+      const trimConf = getTrimConf();
+      const trimmedSrcs = await trimSrcs(srcs, trimConf);
+      srcs = null;
+
+      drawDst(trimmedSrcs, dstCanvas);
       dstWrapper.appendChild(dstCanvas);
 
-      updateDstName(files[0]);
+      updateDstName(files[0].name);
       saveButton.disabled = false;
-      saveButton.textContent = '保存';
     }
     catch (err) {
+      status.textContent = 'エラー発生';
       dstCanvas.remove();
-      saveButton.textContent = 'エラー発生';
       console.error(err);
+    }
+    finally {
+      status.classList.remove('in-progress');
     }
   }
 }
 
 
-imgInput.addEventListener('change', onChangeImgInput);
+imgInput.addEventListener('change', main);
 saveButton.addEventListener('click', () => saveDst(dstCanvas));

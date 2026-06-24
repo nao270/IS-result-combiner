@@ -1,43 +1,51 @@
-const SCAN_STEP = 6;
-let baseW, scanX, scanW, bgTh;
+const BG_TH = 70;
+const TPL_HEIGHT = 0.125;
+const SCAN = { X: 0.228, Y: 0.2, WIDTH: 0.2 };
+const STEP = 6;
+let dstW;
+let scanW;
 
 
 class Part {
 
+  #baseH;
   #ctx;
-  #scanY;
-  #tplH;
+  #scanH;
   #tgtPixels;
 
-  constructor(src, CONF) {
+  constructor(src) {
+    const srcH = src.naturalHeight;
+    const srcW = src.naturalWidth;
+    const scale = dstW / srcW;
+    const sX = Math.round(srcW * SCAN.X);
+    const sY = Math.round(srcH * SCAN.Y);
+    const sW = Math.round(srcW * SCAN.WIDTH);
+    const sH = srcH - sY;
     this.src = src;
-    this.srcH = Math.round(
-      this.src.naturalHeight * baseW / this.src.naturalWidth
-    );
-    this.#scanY = Math.round(this.srcH * CONF.SCAN_Y);
-    this.#tplH = Math.round(this.srcH * CONF.TPL_HEIGHT);
-
-    if (this.#scanY + this.#tplH >= this.srcH) {
-      throw new Error('scanY + tplH is equal or larger than srcH.')
-    }
+    this.#baseH = Math.round(srcH * scale);
+    this.#scanH = Math.round(sH * scale);
 
     const canvas = document.createElement('canvas');
-    canvas.width = baseW;
-    canvas.height = this.srcH;
-    const ctx = canvas.getContext('2d', {willReadFrequently: true});
+    canvas.width = scanW;
+    canvas.height = this.#scanH;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.filter = 'grayscale(100%)';
-    ctx.drawImage(this.src, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(src,
+      sX, sY, sW, sH,
+      0, 0, canvas.width, canvas.height
+    );
     this.#ctx = ctx;
   }
 
-  detectHeight(prevPart) {
+  detectMatchedPos(prevPart) {
     if (prevPart === undefined) {
-      this.height = this.srcH;
+      this.combineY = 0;
     }
     else {
       const tgtPixels = this.#makeTgtPixels();
-      const tplPixels = prevPart.#getTplPixels();
-      const endY = this.srcH - this.#scanY - prevPart.#tplH;
+      const tplPixels = prevPart.#tplPixels();
+      const tplH = tplPixels.length / scanW;
+      const endY = this.#scanH - tplH;
       let offset = endY * scanW;
       let bestY;
       let bestDiff = Infinity;
@@ -45,12 +53,12 @@ class Part {
       for (let y = endY; y > -1; y--, offset -= scanW) {
         let diff = 0;
 
-        for (let i = 0; i < tplPixels.length; i += SCAN_STEP) {
+        for (let i = 0; i < tplPixels.length; i += STEP) {
           const tgtPixel = tgtPixels[i + offset];
           const tplPixel = tplPixels[i];
 
           if (!tgtPixel.is_bg || !tplPixel.is_bg) {
-            diff += Math.abs(tgtPixel.val - tplPixel.val);
+            diff += Math.abs(tgtPixel.value - tplPixel.value);
             if (diff > bestDiff) {
               break;
             }
@@ -63,74 +71,66 @@ class Part {
         }
       }
 
-      this.height = endY - bestY;
+      this.combineY = SCAN.Y + (bestY + tplH) / this.#baseH;
     }
+    this.combineH = this.#baseH - Math.round(this.combineY * this.#baseH);
   }
 
-  #getPixelData(y, height) {
+  #pixelData(y) {
+    const sY = Math.round(this.#scanH * y);
     const imgData = this.#ctx
-      .getImageData(scanX, y, scanW, height)
+      .getImageData(0, sY, scanW, this.#scanH - sY)
       .data
-      .filter((_, index) => index % 4 === 0);
-    return Array.from(imgData, pixel => ({ val: pixel, is_bg: pixel < bgTh }));
+      .filter((_, i) => i % 4 === 0);
+    return Array.from(imgData, pixel => ({ value: pixel, is_bg: pixel < BG_TH }));
   }
 
-  #getTplPixels() {
+  #tplPixels() {
     if (this.#tgtPixels === undefined) {
-      return this.#getPixelData(this.srcH - this.#tplH, this.#tplH);
+      return this.#pixelData(1 - TPL_HEIGHT);
     }
     else {
       return this.#tgtPixels.slice(
-        (this.srcH - this.#tplH - this.#scanY) * scanW
+        Math.round(this.#scanH * (1 - TPL_HEIGHT)) * scanW
       );
     }
   }
 
   #makeTgtPixels() {
-    this.#tgtPixels = this.#getPixelData(this.#scanY, this.srcH - this.#scanY);
+    this.#tgtPixels = this.#pixelData(0);
     return this.#tgtPixels;
   }
 }
 
 
-function initParams(baseSrc, CONF) {
-  baseW = baseSrc.naturalWidth;
-  scanX = Math.round(baseW * CONF.SCAN_X);
-  scanW = Math.round(baseW * CONF.SCAN_WIDTH);
-  bgTh = CONF.BG_TH;
+function drawDst(srcs, dstCanvas) {
+  dstW = srcs[0].naturalWidth;
+  scanW = Math.round(dstW * SCAN.WIDTH);
+  const parts = srcs.map(src => new Part(src));
 
-  if (scanX + scanW >= baseW) {
-    throw new Error('scanX + scanW is equal or larger than baseW.');
-  }
-}
-
-
-function detectHeights(parts) {
   let prevPart;
   for (const part of parts) {
-    part.detectHeight(prevPart);
+    part.detectMatchedPos(prevPart);
     prevPart = part;
   }
-}
 
-
-export function drawDst(srcs, dstCanvas, CONF) {
-  initParams(srcs[0], CONF);
-  const parts = srcs.map(src => new Part(src, CONF));
-
-  detectHeights(parts);
-
-  const height = parts.reduce((total, part) => total + part.height, 0);
+  const dstH = parts.reduce((total, part) => total + part.combineH, 0);
   const ctx = dstCanvas.getContext('2d');
-  dstCanvas.width = baseW;
-  dstCanvas.height = height;
-  let dy = height;
+  dstCanvas.width = dstW;
+  dstCanvas.height = dstH;
+  let dy = 0;
 
-  for (const part of parts.reverse()) {
-    dy -= part.srcH;
-    if (part.height > 0) {
-      ctx.drawImage(part.src, 0, dy, baseW, part.srcH);
+  for (const part of parts) {
+    if (part.combineH > 0) {
+      const sY = Math.round(part.combineY * part.src.naturalHeight);
+      ctx.drawImage(part.src,
+        0, sY, part.src.naturalWidth, part.src.naturalHeight - sY,
+        0, dy, dstW, part.combineH
+      );
+      dy += part.combineH;
     }
-    dy += part.srcH - part.height;
   }
 }
+
+
+export { drawDst };

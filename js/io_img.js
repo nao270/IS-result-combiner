@@ -1,7 +1,10 @@
+const DEFAULT = 'combined';
+const EXTENSION = '.png';
+const MIME_TYPE = 'image/png';
 let dstName;
 
 
-export async function loadImg(file) {
+async function loadImg(file) {
   const img = new Image();
   const url = URL.createObjectURL(file);
   img.src = url;
@@ -11,21 +14,43 @@ export async function loadImg(file) {
 }
 
 
-export function updateDstName(file) {
-  const fileName = file.name;
-  const dotPos = fileName.lastIndexOf('.');
-  const extension = fileName.slice(dotPos);
-  const stem = fileName.slice(0, dotPos);
-  dstName = stem + '_combined' + extension;
+function updateDstName(fileName) {
+  const stem = fileName.slice(0, fileName.lastIndexOf('.'));
+  dstName = stem + '_' + DEFAULT + EXTENSION;
 }
 
 
-export function saveDst(dstCanvas) {
-  dstCanvas.toBlob(blob => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = dstName;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+function saveDst(dstCanvas) {
+  dstCanvas.toBlob(async blob => {
+    if ('showSaveFilePicker' in window) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: dstName,
+          types: [{
+            description: 'Images',
+            accept: { [MIME_TYPE]: [EXTENSION] },
+          }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+      }
+      catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error(err);
+        }
+      }
+    }
+    else {
+      const a = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      a.href = url;
+      a.download = dstName;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
   });
 }
+
+
+export { loadImg, updateDstName, saveDst };

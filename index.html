@@ -2,42 +2,86 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>統合戦略リザルト画像結合</title>
-  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
   <link href="style.css" rel="stylesheet">
 </head>
 
 <body>
-  <h1>統合戦略リザルト画像結合</h1>
+  <header>
+    <h1>統合戦略リザルト画像結合</h1>
 
-  <details>
-    <summary>使い方</summary>
-    <ol>
-      <li>
-        リザルトが全て写るようにスクリーンショット撮影します。ファイル名を揃えるために上から順に撮影することを推奨します。<br>
-        最初に初期位置で撮影します。2枚目以降は上部を除外した緑色の部分が有効な範囲で、上下に少し余裕を持って撮影します。最後に最下部で撮影します。
-        <img src="assets/example.webp" style="width: 90%">
-      </li>
-      <li>
-        必要に応じてファイル名を変更します。昇順で並べたときにリザルトの上から順になるようにします。<br>
-        リネーム不要例：IMG_XXXX.PNG, Screenshot_yyyyMMdd-hhmmss.png<br>
-        リネーム例　　：1.png, 2.png, 3.png, …
-      </li>
-      <li>
-        [ファイル選択]を押して画像を全て選択します。処理が完了すると結合された画像が表示されます。
-        <img src="assets/result.webp" style="width: 30%">
-      </li>
-    </ol>
-    <p>
-      処理はブラウザ上で行われ、処理前後の画像がアップロードされることはありません。<br>
-      入力する画像の横幅が異なる場合は、先頭画像の横幅を基準にリサイズします。<br>
-      エラー報告や質問・要望は<a target="_blank" href="https://x.com/Nao_arknights">作者</a>まで。
-    </p>
-  </details>
+    <details>
+      <summary><h2>使い方</h2></summary>
+      <ol>
+        <li>
+          リザルトが全て写るようにスクリーンショット撮影する。ファイル名を揃えるために上から順に撮影することを推奨する。<br>
+          最初に初期位置で撮影する。2枚目以降は上部を除外した緑色の部分が有効な範囲で、上下に少し余裕を持って撮影する。最後に最下部で撮影する。
+          <img src="assets/example.webp" class="example">
+        </li>
+        <li>
+          必要に応じてファイル名を変更する。<br>
+          例えば1.png, 2.png, 3.png, …のように、昇順で並べたときにリザルトの上から順になるようにする。
+          <div class="tips">
+            リネーム不要例:
+            <ul>
+              <li>IMG_XXXX.PNG</li>
+              <li>Screenshot_yyyyMMdd-hhmmss.png</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          [ファイル選択]を押して画像を全て選択する。処理が完了すると結合された画像が表示される。
+          <img src="assets/result.webp" class="result">
+        </li>
+      </ol>
+      <p>
+        処理はブラウザ上で行われ、処理前後の画像がアップロードされることはない。<br>
+        入力する画像の横幅が異なる場合は、先頭画像の横幅を基準にリサイズする。<br>
+        不具合報告や質問・要望は<a target="_blank" href="https://x.com/Nao_arknights">作者</a>まで。
+      </p>
+    </details>
+  </header>
 
-  <input id="img-input" type="file" accept="image/*" multiple>
-  <button id="save-button" disabled>入力待ち</button>
-  <div id="dst-wrapper"></div>
+  <section>
+    <h2>設定</h2>
+
+    <details>
+      <summary>トリミング</summary>
+      <form name="trim">
+        <label for="trim-t">上[%]</label>
+        <input type="number" id="trim-t" name="trimT" max=99 min=0 value=0>
+        <label for="trim-b">下[%]</label>
+        <input type="number" id="trim-b" name="trimB" max=99 min=0 value=0>
+        <label for="trim-l">左[%]</label>
+        <input type="number" id="trim-l" name="trimL" max=99 min=0 value=0>
+        <label for="trim-r">右[%]</label>
+        <input type="number" id="trim-r" name="trimR" max=99 min=0 value=0>
+        <label for="trim-cond1">先頭画像に上トリムを適用</label>
+        <input type="checkbox" id="trim-cond1" name="applyTrimTtoFirst">
+        <label for="trim-cond2">末尾画像に下トリムを適用</label>
+        <input type="checkbox" id="trim-cond2" name="applyTrimBtoLast">
+      </form>
+      <div>
+        画像の高さまたは幅に対する割合を設定して、結合前に端をトリミングする。<br>
+        デフォルトの0%ではトリミングを行わない。上+下と左+右は100%未満でなければならない。<br>
+        例えば左10%と下10%を設定して1920x1080の画像を入力すると、左から192pxと下から108pxを切り取ったうえで結合する。
+        <div class="tips">
+          上下を設定する際の注意:<br>
+          リザルト画面自体を大きく切り取ると、結合位置の検出に失敗しやすくなる。<br>
+          スクリーンショット間の上下の余裕を大きく取ることが検出失敗の防止に有効。
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <input id="img-input" type="file" accept="image/*" multiple>
+    <button id="save-button" type="button" disabled>保存</button>
+    <div id="status"></div>
+    <div id="dst-wrapper"></div>
+  </section>
 
   <script src="js/main.js" type="module"></script>
 </body>

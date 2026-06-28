@@ -14,24 +14,29 @@
 body {
   background: var(--primary-bg);
   color: var(--primary-text);
-  margin: 0 2rem;
+  margin: 1rem 2rem;
 
   & > * {
-    margin: 2rem 0;
+    margin: 2rem auto;
   }
 
   & > *:first-child {
-    margin-top: 1rem;
+    margin-top: 0;
   }
 
   & > section:last-of-type {
-    margin-bottom: 1rem;
+    margin-bottom: 0;
   }
 }
 
-header, section {
+section {
   & > * {
     margin: 1rem auto;
+  }
+
+  & > h2 {
+    border-left: .3rem solid var(--theme);
+    padding-left: .5rem;
   }
 }
 
@@ -41,16 +46,21 @@ a {
 
 h1 {
   font-size: 120%;
+  font-weight: bold;
 }
 
 h2 {
   font-size: 110%;
-  border-left: .25rem solid var(--theme);
-  padding-left: .5rem;
+  font-weight: bold;
 }
 
-li {
-  margin: 1rem 0;
+ul {
+  padding-left: 1.75rem;
+
+  & > li {
+    margin: auto;
+    list-style-type: disc;
+  }
 }
 
 img {
@@ -70,6 +80,10 @@ details {
 
   & > ol {
     padding-left: 2rem;
+
+    & > li {
+      margin: 1rem auto;
+    }
   }
 
   & > *:last-child {
@@ -94,8 +108,6 @@ summary {
     display: inline;
     font-weight: normal;
     font-size: 100%;
-    border: none;
-    padding: 0;
   }
 
   &::before {
@@ -146,10 +158,10 @@ input[type="file"] {
 
 button {
   width: 4rem;
-}
 
-button:disabled {
-  cursor: not-allowed;
+  &:disabled {
+    cursor: default;
+  }
 }
 
 button, input[type="file"], input::file-selector-button {
@@ -159,8 +171,6 @@ button, input[type="file"], input::file-selector-button {
 
 button, input[type="file"] {
   display: block;
-  margin-left: auto;
-  margin-right: auto;
   border-radius: .5rem;
 }
 
@@ -171,6 +181,11 @@ button, input::file-selector-button {
 
 button:disabled, input[type="file"] {
   background: var(--secondary-bg);
+}
+
+canvas {
+  display: block;
+  max-width: 70%;
 }
 
 #status {
@@ -205,12 +220,6 @@ button:disabled, input[type="file"] {
   }
 }
 
-#dst-wrapper > canvas {
-  display: block;
-  margin: 0 auto;
-  max-width: 70%;
-}
-
 .example {
   width: 90%;
 }
@@ -220,16 +229,11 @@ button:disabled, input[type="file"] {
 }
 
 .tips {
-  margin: .5rem;
-  padding-left: .5rem;
-  border-left: .25rem solid var(--tips);
+  margin: .25rem;
+  padding-left: .25rem;
+  border-left: .15rem solid var(--tips);
+}
 
-  & > ul {
-    padding-left: 1.75rem;
-
-    & > li {
-      margin: auto;
-      list-style-type: disc;
-    }
-  }
+.hidden {
+  display: none;
 }

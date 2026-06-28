@@ -4,11 +4,12 @@ import { loadImg, updateDstName, saveDst } from './io_img.js';
 import { trimSrcs } from './trimmer.js';
 
 
-const dstCanvas = document.createElement('canvas');
-const dstWrapper = document.querySelector('#dst-wrapper');
-const imgInput = document.querySelector('#img-input');
-const saveButton = document.querySelector('#save-button');
-const status = document.querySelector('#status');
+const dst = document.getElementById('dst');
+const imgInput = document.getElementById('img-input');
+const saveButton = document.getElementById('save-button');
+const status = document.getElementById('status');
+const hiddenClass = 'hidden';
+const inProgressClass = 'in-progress';
 
 
 async function main() {
@@ -17,9 +18,9 @@ async function main() {
 
   if (files.length) {
     try {
-      dstCanvas.remove();
+      dst.classList.add(hiddenClass);
       saveButton.disabled = true;
-      status.classList.add('in-progress');
+      status.classList.add(inProgressClass);
 
       files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
       let srcs = await Promise.all(files.map(async file => await loadImg(file)));
@@ -28,23 +29,22 @@ async function main() {
       const trimmedSrcs = await trimSrcs(srcs, trimConf);
       srcs = null;
 
-      drawDst(trimmedSrcs, dstCanvas);
-      dstWrapper.appendChild(dstCanvas);
-
+      drawDst(trimmedSrcs, dst);
       updateDstName(files[0].name);
+
+      dst.classList.remove(hiddenClass);
       saveButton.disabled = false;
     }
     catch (err) {
       status.textContent = 'エラー発生';
-      dstCanvas.remove();
       console.error(err);
     }
     finally {
-      status.classList.remove('in-progress');
+      status.classList.remove(inProgressClass);
     }
   }
 }
 
 
 imgInput.addEventListener('change', main);
-saveButton.addEventListener('click', () => saveDst(dstCanvas));
+saveButton.addEventListener('click', () => saveDst(dst));

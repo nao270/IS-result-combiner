@@ -103,7 +103,7 @@ class Part {
 }
 
 
-function drawDst(srcs, dstCanvas) {
+function drawDst(srcs, dst) {
   dstW = srcs[0].naturalWidth;
   scanW = Math.round(dstW * SCAN.WIDTH);
   const parts = srcs.map(src => new Part(src));
@@ -115,9 +115,9 @@ function drawDst(srcs, dstCanvas) {
   }
 
   const dstH = parts.reduce((total, part) => total + part.combineH, 0);
-  const ctx = dstCanvas.getContext('2d');
-  dstCanvas.width = dstW;
-  dstCanvas.height = dstH;
+  const ctx = dst.getContext('2d');
+  dst.width = dstW;
+  dst.height = dstH;
   let dy = 0;
 
   for (const part of parts) {

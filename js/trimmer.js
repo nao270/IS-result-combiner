@@ -2,9 +2,9 @@ async function trimSrc(src, conf, applyTrimT, applyTrimB) {
   const srcW = src.naturalWidth;
   const srcH = src.naturalHeight;
   const sX = Math.round(srcW * conf.trimL / 100);
-  const sY = Math.round(srcH * conf.trimT / 100) * applyTrimT;
+  const sY = applyTrimT ? Math.round(srcH * conf.trimT / 100) : 0;
   const sW = srcW - sX - Math.round(srcW * conf.trimR / 100);
-  const sH = srcH - sY - Math.round(srcH * conf.trimB / 100) * applyTrimB;
+  const sH = srcH - sY - (applyTrimB ? Math.round(srcH * conf.trimB / 100) : 0);
 
   if (sW <= 0 || sH <= 0) {
     throw Error('trimConf is invalid value.');

@@ -1,10 +1,10 @@
 import { drawDst } from './combiner.js';
-import { getTrimConf } from './conf.js';
+import { trimForm } from './conf.js';
 import { loadImg, updateDstName, saveDst } from './io_img.js';
 import { trimSrcs } from './trimmer.js';
 
 
-const dst = document.getElementById('dst');
+const dstCanvas = document.getElementById('dst-canvas');
 const imgInput = document.getElementById('img-input');
 const saveButton = document.getElementById('save-button');
 const status = document.getElementById('status');
@@ -18,21 +18,21 @@ async function main() {
 
   if (files.length) {
     try {
-      dst.classList.add(hiddenClass);
+      dstCanvas.classList.add(hiddenClass);
       saveButton.disabled = true;
       status.classList.add(inProgressClass);
 
       files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
       let srcs = await Promise.all(files.map(async file => await loadImg(file)));
 
-      const trimConf = getTrimConf();
+      const trimConf = trimForm.getConf();
       const trimmedSrcs = await trimSrcs(srcs, trimConf);
       srcs = null;
 
-      drawDst(trimmedSrcs, dst);
+      drawDst(trimmedSrcs, dstCanvas);
       updateDstName(files[0].name);
 
-      dst.classList.remove(hiddenClass);
+      dstCanvas.classList.remove(hiddenClass);
       saveButton.disabled = false;
     }
     catch (err) {
@@ -47,4 +47,4 @@ async function main() {
 
 
 imgInput.addEventListener('change', main);
-saveButton.addEventListener('click', () => saveDst(dst));
+saveButton.addEventListener('click', () => saveDst(dstCanvas));

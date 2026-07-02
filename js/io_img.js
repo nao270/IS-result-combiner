@@ -20,8 +20,8 @@ function updateDstName(fileName) {
 }
 
 
-function saveDst(dst) {
-  dst.toBlob(async blob => {
+function saveDst(dstCanvas) {
+  dstCanvas.toBlob(async blob => {
     if ('showSaveFilePicker' in window) {
       try {
         const handle = await window.showSaveFilePicker({

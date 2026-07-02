@@ -1,9 +1,10 @@
+const BASE_STEP = 24 / 1920;
 const BG_TH = 70;
 const TPL_HEIGHT = 0.125;
-const SCAN = { X: 0.228, Y: 0.2, WIDTH: 0.2 };
-const STEP = 6;
+const SCAN = Object.freeze({ X: 431 / 1920, Y: 0.2, WIDTH: 0.5 - 431 / 1920 });
 let dstW;
 let scanW;
+let step;
 
 
 class Part {
@@ -42,7 +43,7 @@ class Part {
       this.combineY = 0;
     }
     else {
-      const tgtPixels = this.#makeTgtPixels();
+      const tgtPixels = this.#setTgtPixels();
       const tplPixels = prevPart.#tplPixels();
       const tplH = tplPixels.length / scanW;
       const endY = this.#scanH - tplH;
@@ -53,7 +54,7 @@ class Part {
       for (let y = endY; y > -1; y--, offset -= scanW) {
         let diff = 0;
 
-        for (let i = 0; i < tplPixels.length; i += STEP) {
+        for (let i = 0; i < tplPixels.length; i += step) {
           const tgtPixel = tgtPixels[i + offset];
           const tplPixel = tplPixels[i];
 
@@ -86,26 +87,23 @@ class Part {
   }
 
   #tplPixels() {
-    if (this.#tgtPixels === undefined) {
-      return this.#pixelData(1 - TPL_HEIGHT);
-    }
-    else {
-      return this.#tgtPixels.slice(
-        Math.round(this.#scanH * (1 - TPL_HEIGHT)) * scanW
-      );
-    }
+    const y = 1 - TPL_HEIGHT;
+    return this.#tgtPixels === undefined
+      ? this.#pixelData(y)
+      : this.#tgtPixels.slice(Math.round(this.#scanH * y) * scanW);
   }
 
-  #makeTgtPixels() {
+  #setTgtPixels() {
     this.#tgtPixels = this.#pixelData(0);
     return this.#tgtPixels;
   }
 }
 
 
-function drawDst(srcs, dst) {
+function drawDst(srcs, dstCanvas) {
   dstW = srcs[0].naturalWidth;
   scanW = Math.round(dstW * SCAN.WIDTH);
+  step = Math.max(Math.round(dstW * BASE_STEP), 1);
   const parts = srcs.map(src => new Part(src));
 
   let prevPart;
@@ -115,16 +113,17 @@ function drawDst(srcs, dst) {
   }
 
   const dstH = parts.reduce((total, part) => total + part.combineH, 0);
-  const ctx = dst.getContext('2d');
-  dst.width = dstW;
-  dst.height = dstH;
+  const ctx = dstCanvas.getContext('2d');
+  dstCanvas.width = dstW;
+  dstCanvas.height = dstH;
   let dy = 0;
 
   for (const part of parts) {
     if (part.combineH > 0) {
-      const sY = Math.round(part.combineY * part.src.naturalHeight);
-      ctx.drawImage(part.src,
-        0, sY, part.src.naturalWidth, part.src.naturalHeight - sY,
+      const src = part.src;
+      const sY = Math.round(part.combineY * src.naturalHeight);
+      ctx.drawImage(src,
+        0, sY, src.naturalWidth, src.naturalHeight - sY,
         0, dy, dstW, part.combineH
       );
       dy += part.combineH;

@@ -1,4 +1,4 @@
-class Form {
+class ConfForm {
 
   #name;
   #inputs;
@@ -6,30 +6,18 @@ class Form {
   constructor(name) {
     this.#name = name;
     this.#inputs = document.forms[name].getElementsByTagName('input');
-    this.#initInputs();
+    this.#loadUserConf();
     window.addEventListener('pagehide', event => {
       if (!event.persisted) {
-        this.#saveConf();
+        this.#saveUserConf();
       }
     });
-  }
-
-  #initInputs() {
-    const conf = localStorage.getItem(this.#name);
-    if (conf) {
-      for (const [key, value] of Object.entries(JSON.parse(conf))) {
-        const input = this.#inputs[key];
-        if (input) {
-          input[valueKey(input)] = value;
-        }
-      }
-    }
   }
 
   getConf() {
     const conf = {};
     for (const input of this.#inputs) {
-      let value = input[valueKey(input)];
+      let value = input[toValueKey(input)];
       if (input.type === 'number') {
         value = Number(value);
       }
@@ -38,13 +26,51 @@ class Form {
     return conf;
   }
 
-  #saveConf() {
-    localStorage.setItem(this.#name, JSON.stringify(this.getConf()));
+  #loadUserConf() {
+    const conf = localStorage.getItem(this.#name);
+    if (conf) {
+      for (const [key, value] of Object.entries(JSON.parse(conf))) {
+        const input = this.#inputs[key];
+        if (input) {
+          input[toValueKey(input)] = value;
+        }
+      }
+    }
+  }
+
+  #saveUserConf() {
+    try {
+      localStorage.setItem(this.#name, JSON.stringify(this.getConf()));
+    }
+    catch (err) {
+      console.error(err);
+    }
   }
 }
 
 
-function valueKey(input) {
+class TrimForm extends ConfForm {
+
+  constructor() {
+    super('trim');
+  }
+
+  getConf() {
+    const conf = super.getConf();
+    for (const [key, value] of Object.entries(conf)) {
+      if (
+          key.startsWith('trim')
+          && (typeof value !== 'number' || value < 0 || value > 100)
+        ) {
+        throw Error(`${key} is invalid value.`);
+      }
+    }
+    return conf;
+  }
+}
+
+
+function toValueKey(input) {
   switch (input.type) {
     case 'checkbox':
       return 'checked';
@@ -54,21 +80,7 @@ function valueKey(input) {
 }
 
 
-function getTrimConf() {
-  const trimConf = trimForm.getConf();
-  for (const [key, value] of Object.entries(trimConf)) {
-    if (
-        key.startsWith('trim')
-        && (typeof value !== 'number' || value < 0 || value > 100)
-      ) {
-      throw Error(`${key} is invalid value.`);
-    }
-  }
-  return trimConf;
-}
+const trimForm = new TrimForm();
 
 
-const trimForm = new Form('trim');
-
-
-export { getTrimConf };
+export { trimForm };
